@@ -23,7 +23,7 @@ FolderTracker is a Python program designed to track and synchronize two folders.
 
 1. Clone the repository:
    ```
-   git clone https://github.com/yourusername/FolderTracker.git
+   git clone https://github.com/edutenorio/FolderTracker.git
    ```
 
 2. Navigate to the project directory:
@@ -75,4 +75,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 Eduardo Tenorio Bastos - edutenorio@gmail.com
 
-Project Link: [https://github.com/yourusername/FolderTracker](https://github.com/yourusername/FolderTracker)
+Project Link: [https://github.com/edutenorio/FolderTracker](https://github.com/edutenorio/FolderTracker)
