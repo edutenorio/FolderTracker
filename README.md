@@ -17,7 +17,7 @@ FolderTracker is a Python program designed to track and synchronize two folders.
 - `sync_manager.py`: Core synchronization logic
 - `ui.py`: Contains the user interface code
 - `requirements.txt`: Lists all required Python packages
-- `img/`: Directory containing image assets (icon-file-16.png, icon-folder-16.png)
+- `img/`: Directory containing image assets
 
 ## Installation
 
