@@ -69,7 +69,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-[Specify your license here]
+MIT License
 
 ## Contact
 
