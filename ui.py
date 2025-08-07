@@ -1,6 +1,10 @@
+import platform
+import subprocess
 import tkinter as tk
+from datetime import datetime
 from tkinter import ttk
 from tkinter import filedialog, messagebox, simpledialog
+import tkinter.font as tkfont
 import os
 from dotenv import load_dotenv
 from icecream import ic
@@ -131,9 +135,11 @@ class FileTree(ttk.Treeview):
     #             self.insert(parent, 'end', text=entry, open=True, tags=("file",), image=self.icon_file)
 
     def build_tree_from_state(self, folder_state: dict):
+        self.clear()
+        if not folder_state:
+            return
         directories = sorted([entry for entry in folder_state if folder_state[entry]["type"] == "folder"])
         files = sorted([entry for entry in folder_state if folder_state[entry]["type"] == "file"])
-        self.clear()
         for directory in directories:
             parent, item = os.path.split(directory)
             state_tag = folder_state[directory].get("tag", "")
@@ -154,6 +160,108 @@ class FileTree(ttk.Treeview):
 
     def clear(self):
         self.delete(*self.get_children())
+
+
+class ConflictDialog(simpledialog.Dialog):
+    def __init__(self, parent, conflicts, future_state, **kwargs):
+        self.result = None
+        self.conflicts = conflicts
+        self.future_state = future_state
+        self.selections = [action.split()[-1] for action in conflicts.values()]
+        self.current_index = 0
+        super().__init__(parent, title="Conflict Resolution")
+
+    def body(self, master):
+        self.result = None
+        default_font = tkfont.nametofont("TkDefaultFont").copy()
+        bold_font = default_font.copy()
+        bold_font.configure(weight="bold")
+        self.filename_label = ttk.Label(master, text="", font=bold_font)
+        self.filename_label.grid(row=0, column=0, columnspan=4, pady=10)
+        ttk.Label(master, text="Size:\nCreated:\nModified:", justify=tk.LEFT).grid(row=1, column=0, sticky="w")
+        ttk.Label(master, text="Size:\nCreated:\nModified:", justify=tk.LEFT).grid(row=1, column=2, sticky="w")
+        self.a_info = ttk.Label(master, text="", justify=tk.LEFT)
+        self.a_info.grid(row=1, column=1, padx=10, sticky="w")
+        self.b_info = ttk.Label(master, text="", justify=tk.LEFT)
+        self.b_info.grid(row=1, column=3, padx=10, sticky="w")
+        self.choice = tk.StringVar()
+        self.options = [("Keep folder A version", "A"), ("Keep folder B version", "B"), ("Keep both (rename)", "both")]
+        self.radio_buttons = [
+            ttk.Radiobutton(master, text="Keep folder A version", variable=self.choice, value="A"),
+            ttk.Radiobutton(master, text="Keep folder B version", variable=self.choice, value="B"),
+            ttk.Radiobutton(master, text="Keep both (rename)", variable=self.choice, value="both")
+        ]
+        self.radio_buttons[0].grid(row=2, column=0, columnspan=2, sticky="w", padx=10)
+        self.radio_buttons[1].grid(row=2, column=2, columnspan=2, sticky="w", padx=10)
+        self.radio_buttons[2].grid(row=3, column=0, columnspan=4, sticky="s", padx=10)
+        # for i, (label, value) in enumerate(self.options):
+        #     rb = ttk.Radiobutton(master, text=label, variable=self.choice, value=value)
+        #     rb.grid(row=2+i, column=0, columnspan=2, sticky="w", padx=10)
+        #     self.radio_buttons.append(rb)
+        # Navigation and action buttons
+        self.nav_frame = ttk.Frame(master)
+        self.nav_frame.grid(row=6, column=0, columnspan=4, pady=(10, 0))
+        self.prev_button = ttk.Button(self.nav_frame, text="Previous", command=self.prev_conflict)
+        self.prev_button.grid(row=0, column=0, padx=5)
+        self.next_button = ttk.Button(self.nav_frame, text="Next", command=self.next_conflict)
+        self.next_button.grid(row=0, column=1, padx=5)
+        self.update_ui()
+        return self.radio_buttons[0]
+
+    def buttonbox(self):
+        box = ttk.Frame(self)
+        ok_btn = ttk.Button(box, text="OK", width=10, command=self.ok)
+        ok_btn.pack(side="left", padx=5, pady=5)
+        cancel_btn = ttk.Button(box, text="Cancel", width=10, command=self.cancel)
+        cancel_btn.pack(side="right", padx=5, pady=5)
+        box.pack()
+
+    def update_ui(self):
+        filepath, action = list(self.conflicts.items())[self.current_index]
+        state = self.future_state[filepath]
+        relpath, filename = os.path.split(filepath)
+        self.filename_label.config(text=f"{filepath}")
+        a_stats = {k[:-2]: v for k, v in state.items() if k.endswith("_a")}
+        b_stats = {k[:-2]: v for k, v in state.items() if k.endswith("_b")}
+        def format_info(stats):
+            if not stats:
+                return "File does not exist"
+            units = ['B', 'KB', 'MB', 'GB']
+            fsize, unit_index = stats["size"], 0
+            while fsize >= 1024:
+                fsize /= 1024
+                unit_index += 1
+            size = (f"{fsize:.0f}" if unit_index == 0 else f"{fsize:.2f}") + f" {units[unit_index]}"
+            ctime = datetime.fromtimestamp(stats["ctime"]).strftime("%d-%m-%Y %H:%M:%S")
+            mtime = datetime.fromtimestamp(stats["mtime"]).strftime("%d-%m-%Y %H:%M:%S")
+            return f"{size}\n{ctime}\n{mtime}"
+        self.a_info.config(text=format_info(a_stats))
+        self.b_info.config(text=format_info(b_stats))
+        # if len(self.selections) <= self.current_index:
+        #     self.selections.append("both")
+        self.choice.set(self.selections[self.current_index])
+        # Enable/disable prev/next buttons
+        self.prev_button.config(state="normal" if self.current_index > 0 else "disabled")
+        self.next_button.config(state="normal" if self.current_index < len(self.conflicts) - 1 else "disabled")
+
+    def prev_conflict(self):
+        self.selections[self.current_index] = self.choice.get()
+        self.current_index -= 1
+        self.update_ui()
+
+    def next_conflict(self):
+        self.selections[self.current_index] = self.choice.get()
+        self.current_index += 1
+        self.update_ui()
+
+    def ok(self, event=None):
+        self.selections[self.current_index] = self.choice.get()
+        self.result = self.selections
+        self.destroy()
+
+    def cancel(self, event=None):
+        self.result = None
+        self.destroy()
 
 
 class FileTreeFrame(ttk.Frame):
@@ -215,11 +323,11 @@ class MainApp(tk.Tk):
         self.filemenu.add_command(label="Exit", command=self.quit)
         self.syncmenu = tk.Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label="Sync", menu=self.syncmenu)
-        self.syncmenu.add_command(label="Set Folder A", command=self.select_folder_a)
-        self.syncmenu.add_command(label="Set Folder B", command=self.select_folder_b)
+        self.syncmenu.add_command(label="Open Folder A", command=self.open_folder_a)
+        self.syncmenu.add_command(label="Open Folder B", command=self.open_folder_b)
         self.syncmenu.add_separator()
         self.syncmenu.add_command(label="Prepare Sync", command=self.prep_sync)
-        self.syncmenu.add_command(label="Handle Conflicts", command=self.not_implemented)
+        self.syncmenu.add_command(label="Handle Conflicts", command=self.handle_conflicts)
         self.syncmenu.add_command(label="Sync Now", command=self.sync_now)
         self.helpmenu = tk.Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label="Help", menu=self.helpmenu)
@@ -261,6 +369,8 @@ class MainApp(tk.Tk):
             # Labels
             # Menu update
             self.menubar.entryconfig("Sync", state=tk.NORMAL)
+            self.syncmenu.entryconfig("Handle Conflicts", state=tk.NORMAL if self.project_manager.active_project.has_conflicts() else tk.DISABLED)
+            self.syncmenu.entryconfig("Sync Now", state=tk.NORMAL if self.project_manager.active_project.has_sync_actions() else tk.DISABLED)
             # Status bar update
             self.s_status.set(f"Current Project: {self.project_manager.active_project.project_name}")
         else:
@@ -289,14 +399,23 @@ class MainApp(tk.Tk):
 
     def create_new_project(self):
         self.ask_to_save_changes()
+        # Project name validation
         name = simpledialog.askstring("New Project", "Enter project name:")
-        # To be implemented: create a dialog to ask for local and remote paths
         if not name:
             return
         if name in self.project_manager.get_project_names():
             messagebox.showerror("Error", "Project already exists.")
             return
-        self.project_manager.create_project(project_name=name)
+        # Project folders validation
+        path_a = tk.filedialog.askdirectory(title=f"Select Folder A", initialdir=".")
+        if not path_a:
+            return
+        path_b = tk.filedialog.askdirectory(title=f"Select Folder B", initialdir=".")
+        if not path_b:
+            return
+        # Create and set active project
+        self.project_manager.create_project(project_name=name, folder_a=path_a, folder_b=path_b)
+        self.refresh_folder_frames()
         self.update_ui()
 
     def open_project(self):
@@ -323,31 +442,40 @@ class MainApp(tk.Tk):
         else:
             messagebox.showerror("Error", "No project selected.")
 
-    def select_folder_a(self):
-        path = self.select_folder("a")
-        if not path:
+    @staticmethod
+    def open_folder(path):
+        if not path or not os.path.isdir(path):
+            messagebox.showerror("Error", f"Invalid folder path: \"{path}\"")
             return
-        self.s_folder_a.set(path)
-        self.project_manager.active_project.folder_a = path
-        self.refresh_folder_frames("a")
+        try:
+            system = platform.system()
+            if system == "Windows":
+                os.startfile(path)
+            elif system == "Darwin":
+                subprocess.Popen(["open", path])
+            else:
+                subprocess.Popen(["xdg-open", path])
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open folder: \"{path}\"\n{e}")
 
-    def select_folder_b(self):
-        path = self.select_folder("b")
-        if not path:
-            return
-        self.s_folder_b.set(path)
-        self.project_manager.active_project.folder_b = path
-        self.refresh_folder_frames("b")
+    def open_folder_a(self):
+        self.open_folder(self.project_manager.active_project.folder_a)
 
-    def select_folder(self, which: str):
-        if which.lower() not in ["a", "b"]:
-            raise ValueError("Invalid folder choice.")
-        return tk.filedialog.askdirectory(title=f"Select Folder {which.upper()}", initialdir=self.s_folder_a.get() if which.lower() == "a" else self.s_folder_b.get())
+    def open_folder_b(self):
+        self.open_folder(self.project_manager.active_project.folder_b)
 
     def prep_sync(self):
         self.project_manager.active_project.prep_sync()
         self.refresh_folder_frames(tags=True)
         self.update_ui()
+
+    def handle_conflicts(self):
+        conflicts = self.project_manager.active_project.get_conflicts()
+        future_state = {k: v for k, v in self.project_manager.active_project.get_future_common_state().items() if k in conflicts.keys()}
+        dialog = ConflictDialog(self, conflicts, future_state)
+        if dialog.result:
+            for i, k in enumerate(conflicts.keys()):
+                self.project_manager.active_project.modify_action(k, " ".join(conflicts[k].split()[0:2] + [dialog.result[i]]))
 
     def sync_now(self):
         self.project_manager.active_project.execute_sync()

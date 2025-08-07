@@ -61,37 +61,21 @@ class Project:
     def folder_a(self):
         return self._config.get("folder_a", "")
 
-    @folder_a.setter
-    def folder_a(self, value):
-        if self._config["folder_a"] == str(value):
-            return
-        self._sync_manager.folder_a = str(value)
-        self._config["folder_a"] = self._sync_manager.folder_a
-        self._modified = True
-
     @property
     def folder_b(self):
         return self._config.get("folder_b", "")
-
-    @folder_b.setter
-    def folder_b(self, value):
-        if self._config["folder_b"] == str(value):
-            return
-        self._sync_manager.folder_b = str(value)
-        self._config["folder_b"] = self._sync_manager.folder_b
-        self._modified = True
 
     @property
     def history(self):
         return self._config.get("history", {})
 
-    @history.setter
-    def history(self, value):
-        if self._config["history"] == dict(value):
-            return
-        self._sync_manager.history = dict(value)
-        self._config["history"] = self._sync_manager.history
-        self._modified = True
+    # @history.setter
+    # def history(self, value):
+    #     if self._config["history"] == dict(value):
+    #         return
+    #     self._sync_manager.history = dict(value)
+    #     self._config["history"] = self._sync_manager.history
+    #     self._modified = True
 
     @property
     def modified(self):
@@ -105,6 +89,20 @@ class Project:
 
     def get_sync_actions(self):
         return self._sync_manager.sync_actions
+
+    def has_sync_actions(self) -> bool:
+        return (self._sync_manager.sync_actions is not None) and (len(self._sync_manager.sync_actions) > 0)
+
+    def has_conflicts(self) -> bool:
+        return self.has_sync_actions() and any("conflict" in self._sync_manager.sync_actions[action] for action in self._sync_manager.sync_actions)
+
+    def get_conflicts(self) -> dict:
+        if not self._sync_manager.sync_actions:
+            return {}
+        return {k: v for k, v in self._sync_manager.sync_actions.items() if "conflict" in v}
+
+    def modify_action(self, rel_path: str, new_action: str):
+        self._sync_manager.modify_action(rel_path, new_action)
 
     def get_future_common_state(self):
         return self._sync_manager.future_common_state
