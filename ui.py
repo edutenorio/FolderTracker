@@ -162,6 +162,37 @@ class FileTree(ttk.Treeview):
         self.delete(*self.get_children())
 
 
+class FileTreeFrame(ttk.Frame):
+    def __init__(self, parent, **kwargs):
+        self._title = kwargs.pop("title", "...")
+        self._path = kwargs.pop("path", "")
+        super().__init__(parent, **kwargs)
+        self.label_title = ttk.Label(self, text=self._title)
+        self.label_path = ttk.Label(self, text=self._path)
+        self.filetree = FileTree(self, path=self._path)
+        self.label_title.pack(padx=3, pady=3)
+        self.label_path.pack(padx=3, pady=3)
+        self.filetree.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+
+    @property
+    def title(self):
+        return self._title
+
+    @title.setter
+    def title(self, value):
+        self._title = str(value)
+        self.label_title.config(text=self._title)
+
+    @property
+    def path(self):
+        return self._path
+
+    @path.setter
+    def path(self, value):
+        self._path = str(value)
+        self.label_path.config(text=self._path)
+
+
 class ConflictDialog(simpledialog.Dialog):
     def __init__(self, parent, conflicts, future_state, **kwargs):
         self.result = None
@@ -262,37 +293,6 @@ class ConflictDialog(simpledialog.Dialog):
     def cancel(self, event=None):
         self.result = None
         self.destroy()
-
-
-class FileTreeFrame(ttk.Frame):
-    def __init__(self, parent, **kwargs):
-        self._title = kwargs.pop("title", "...")
-        self._path = kwargs.pop("path", "")
-        super().__init__(parent, **kwargs)
-        self.label_title = ttk.Label(self, text=self._title)
-        self.label_path = ttk.Label(self, text=self._path)
-        self.filetree = FileTree(self, path=self._path)
-        self.label_title.pack(padx=3, pady=3)
-        self.label_path.pack(padx=3, pady=3)
-        self.filetree.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
-
-    @property
-    def title(self):
-        return self._title
-
-    @title.setter
-    def title(self, value):
-        self._title = str(value)
-        self.label_title.config(text=self._title)
-
-    @property
-    def path(self):
-        return self._path
-
-    @path.setter
-    def path(self, value):
-        self._path = str(value)
-        self.label_path.config(text=self._path)
 
 
 class MainApp(tk.Tk):

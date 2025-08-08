@@ -302,20 +302,17 @@ class SyncManager:
                     new_common_list[rel_path] = props_b
                 elif action.endswith("both"):
                     new_file_a, new_file_b = self._handle_conflict(rel_path, props_a, props_b)
-                    new_common_list[new_file_a] = self.get_props(os.path.join(self.folder_a, new_file_a), new_file_a)
-                    new_common_list[new_file_b] = self.get_props(os.path.join(self.folder_b, new_file_b), new_file_b)
+                    new_common_list[new_file_a] = self.get_props(str(os.path.join(self.folder_a, new_file_a)), new_file_a)
+                    new_common_list[new_file_b] = self.get_props(str(os.path.join(self.folder_b, new_file_b)), new_file_b)
                 else:
                     logger.error(f"Invalid conflict resolution action: {action}")
                     raise ValueError(f"Invalid conflict resolution action: {action}")
             else:
                 logger.error(f"Invalid action: {action}")
                 raise ValueError(f"Invalid action: {action}")
-            # elif action == "conflict keep both":
-            #     props_a = self.get_props(str(os.path.join(self._folder_a, rel_path)), rel_path)
-            #     props_b = self.get_props(str(os.path.join(self._folder_b, rel_path)), rel_path)
-            #     new_file_a, new_file_b = self._handle_conflict(rel_path, props_a, props_b)
-            #     new_common_list[new_file_a] = self.get_props(os.path.join(self.folder_a, new_file_a), new_file_a)
-            #     new_common_list[new_file_b] = self.get_props(os.path.join(self.folder_b, new_file_b), new_file_b)
+        # Reset common state and sync actions
+        self._future_common_state = {}
+        self._sync_actions = {}
         # Update history
         self._history[datetime.now().strftime("%Y-%m-%d %H:%M:%S")] = new_common_list
 
