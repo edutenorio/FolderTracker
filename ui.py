@@ -317,7 +317,7 @@ class MainApp(tk.Tk):
         self.filemenu.add_command(label="New Project...", command=self.create_new_project)
         self.filemenu.add_command(label="Open Project...", command=self.open_project)
         self.filemenu.add_command(label="Save Project...", command=self.save_active_project)
-        self.filemenu.add_command(label="Save Project As...", command=self.not_implemented)
+        self.filemenu.add_command(label="Save Project As...", command=self.save_active_project_as)
         self.filemenu.add_command(label="Delete Project...", command=self.not_implemented)
         self.filemenu.add_separator()
         self.filemenu.add_command(label="Exit", command=self.quit)
@@ -441,6 +441,19 @@ class MainApp(tk.Tk):
             self.update_ui()
         else:
             messagebox.showerror("Error", "No project selected.")
+
+    def save_active_project_as(self):
+        if not self.project_manager.active_project:
+            messagebox.showerror("Error", "No project selected.")
+            return
+        name = simpledialog.askstring("Save Project As", "Enter project name:")
+        if not name:
+            return
+        if name in self.project_manager.get_project_names():
+            messagebox.showerror("Error", "Project already exists.")
+            return
+        self.project_manager.save_active_as(name)
+
 
     @staticmethod
     def open_folder(path):

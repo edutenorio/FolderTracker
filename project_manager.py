@@ -81,6 +81,9 @@ class Project:
     def modified(self):
         return self._modified
 
+    def get_config(self):
+        return self._config.copy()
+
     def get_folder_state(self, which: str):
         return self._sync_manager.get_folder_state(which)
 
@@ -169,6 +172,17 @@ class ProjectManager:
     def save_active(self):
         if self._active_project:
             self._active_project.save_to_file()
+
+    def save_active_as(self, new_project_name):
+        if not self._active_project:
+            return
+        new_config = self._active_project.get_config()
+        new_config["project_name"] = new_project_name
+        del new_config["project_path"]
+        new_project = Project(**new_config)
+        self.projects.append(new_project)
+        self._active_project = new_project
+        self._active_project.save_to_file()
 
     def set_active_project(self, project_name):
         """
