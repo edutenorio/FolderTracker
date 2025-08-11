@@ -24,11 +24,15 @@ class Project:
         self._modified = False
 
     def __str__(self):
-        return (f"Project: \"{self._config['project_name']}\", "
-                f"Folder A: \"{self._config['folder_a']}\", Folder B: \"{self._config['folder_b']}\"")
+        return f"Project: {self._config['project_name']}, \"{self._config['folder_a']}\" <-> \"{self._config['folder_b']}\""
 
     def __repr__(self):
         return self.__str__()
+
+    def __eq__(self, other):
+        if not isinstance(other, Project):
+            return False
+        return self._config["project_name"] == other._config["project_name"]
 
     def load_from_file(self):
         self._config.update(json.load(open(self._config["project_path"], "r")))
@@ -127,7 +131,40 @@ class ProjectManager:
 
     @active_project.setter
     def active_project(self, value):
-        self._active_project = value if isinstance(value, Project) else self.get_project_by_name(str(value))
+        """
+        Set the active project for the ProjectManager.
+
+        This method sets the active project based on the provided value. It can handle
+        different types of input: None, a Project instance, or a project name string.
+
+        Parameters:
+        value : None, Project, or str
+            The value to set as the active project. It can be:
+            - None: to clear the active project
+            - A Project instance: to directly set as the active project
+            - A string: interpreted as a project name to look up and set
+
+        Returns:
+        None
+
+        Raises:
+        ValueError
+            If a string is provided and no matching project is found.
+
+        Side Effects:
+        - Sets self._active_project to None, a Project instance, or raises an error.
+        """
+        if not value:
+            self._active_project = None
+            return
+        if isinstance(value, Project):
+            self._active_project = value
+            return
+        project = self.get_project_by_name(str(value))
+        if project:
+            self._active_project = project
+        else:
+            raise ValueError(f"Invalid project: {value}")
 
     def load_projects(self):
         if not os.path.exists(PROJECTS_DIR):
@@ -183,6 +220,15 @@ class ProjectManager:
         self.projects.append(new_project)
         self._active_project = new_project
         self._active_project.save_to_file()
+
+    def delete_project(self, project):
+        target = project if isinstance(project, Project) else self.get_project_by_name(project)
+        if not target:
+            return
+        if self._active_project == target:
+            self._active_project = None
+        os.remove(target.get_config()["project_path"])
+        self.projects.remove(target)
 
     def set_active_project(self, project_name):
         """

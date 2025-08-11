@@ -318,7 +318,7 @@ class MainApp(tk.Tk):
         self.filemenu.add_command(label="Open Project...", command=self.open_project)
         self.filemenu.add_command(label="Save Project...", command=self.save_active_project)
         self.filemenu.add_command(label="Save Project As...", command=self.save_active_project_as)
-        self.filemenu.add_command(label="Delete Project...", command=self.not_implemented)
+        self.filemenu.add_command(label="Delete Project...", command=self.delete_project)
         self.filemenu.add_separator()
         self.filemenu.add_command(label="Exit", command=self.quit)
         self.syncmenu = tk.Menu(self.menubar, tearoff=0)
@@ -359,7 +359,6 @@ class MainApp(tk.Tk):
     def quit(self):
         self.ask_to_save_changes()
         super().quit()
-
 
     def update_ui(self):
         if self.project_manager.active_project:
@@ -423,7 +422,7 @@ class MainApp(tk.Tk):
         self.project_manager.load_projects()
         dialog = OpenProjectDialog(self, title="Open Project", project_names=self.project_manager.get_project_names())
         if dialog.selection:
-            self.project_manager.set_active_project(dialog.selection)
+            self.project_manager.active_project = dialog.selection
             self.refresh_folder_frames()
             self.update_ui()
 
@@ -453,7 +452,13 @@ class MainApp(tk.Tk):
             messagebox.showerror("Error", "Project already exists.")
             return
         self.project_manager.save_active_as(name)
+        self.update_ui()
 
+    def delete_project(self):
+        if messagebox.askyesno("Confirm Delete", "Do you really want to delete the current project?\nThis operation cannot be undone."):
+            self.project_manager.delete_project(self.project_manager.active_project)
+            self.refresh_folder_frames()
+            self.update_ui()
 
     @staticmethod
     def open_folder(path):
