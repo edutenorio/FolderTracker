@@ -45,14 +45,25 @@ FolderTracker is a Python program designed to track and synchronize two folders.
 
 2. Follow the on-screen instructions to set up your folders and start synchronization.
 
+## Generating an Executable
+To create a standalone executable for FolderTracker:
+1. Ensure you have cx_Freeze installed:
+   ```
+   pip install cx_Freeze
+   ```
+
+2. Run the setup script:
+   ```
+   python setup.py build
+   ```
+This will generate an executable in the build directory, allowing you to run FolderTracker without needing Python installed.
+
 ## Dependencies
 
-FolderTracker relies on several Python packages:
+FolderTracker depends on several Python packages listed in `requirements.txt`, including:
 
 - Pillow: For image processing tasks
-- Pygments: For syntax highlighting in logs
 - Icecream: For enhanced debugging
-- Colorama: For colored console output
 - Python-dotenv: For managing environment variables
 
 For a complete list of dependencies, see `requirements.txt`.
