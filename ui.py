@@ -14,9 +14,8 @@ from PIL import Image, ImageTk
 from project_manager import ProjectManager
 
 load_dotenv()
-DEBUG = os.environ.get("DEBUG", False)
-PROJECTS_DIR = os.environ.get("PROJECTS_DIR")
-PROJECT_LIST_FILE = os.path.join(PROJECTS_DIR, "project_list.json")
+DEBUG = bool(os.environ.get("DEBUG", False))
+PROJECTS_DIR = str(os.environ.get("PROJECTS_DIR"))
 ICON_FILE = str(os.environ.get("ICON_FILE"))
 
 
