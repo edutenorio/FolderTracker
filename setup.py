@@ -13,6 +13,7 @@ if sys.platform == "win32":
 # Include folders and files (icons, etc.)
 include_files = [
     ("img", "img"),  # images used in the UI
+    (".env", ".env"),
     (os.environ["TCL_LIBRARY"], "tcl"),
     (os.environ["TK_LIBRARY"], "tk")
 ]
