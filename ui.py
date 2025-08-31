@@ -343,9 +343,7 @@ class MainApp(tk.Tk):
         self.statusbar = tk.Label(self, textvariable=self.s_status, bd=1, relief=tk.SUNKEN, anchor=tk.S, justify=tk.LEFT)
         self.statusbar.grid(row=1, column=0, columnspan=3, sticky="NSEW")
 
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_columnconfigure(1, weight=1)
-        self.grid_columnconfigure(2, weight=1)
+        self.grid_columnconfigure((0, 1, 2), weight=1, uniform="column")
         self.grid_rowconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=0)
 
