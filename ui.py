@@ -167,11 +167,15 @@ class FileTreeFrame(ttk.Frame):
         self._path = kwargs.pop("path", "")
         super().__init__(parent, **kwargs)
         self.label_title = ttk.Label(self, text=self._title)
-        self.label_path = ttk.Label(self, text=self._path)
+        self.label_path = ttk.Label(self, text=self._path, justify=tk.LEFT, anchor="w", wraplength=200)
         self.filetree = FileTree(self, path=self._path)
         self.label_title.pack(padx=3, pady=3)
-        self.label_path.pack(padx=3, pady=3)
+        self.label_path.pack(padx=3, pady=3, fill=tk.X)
         self.filetree.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+        self.bind("<Configure>", self._on_resize)
+
+    def _on_resize(self, event):
+        self.label_path.config(wraplength=event.width - 20)
 
     @property
     def title(self):
@@ -299,7 +303,6 @@ class MainApp(tk.Tk):
         super().__init__(*args, **kwargs)
         self.title("Folder Sync")
         self.iconbitmap(default=ICON_FILE)
-        # self.geometry("600x400")
         # App objects
         self.project_manager = ProjectManager()
         self.project_manager.load_projects()
@@ -346,6 +349,9 @@ class MainApp(tk.Tk):
         self.grid_columnconfigure((0, 1, 2), weight=1, uniform="column")
         self.grid_rowconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=0)
+
+        self.update_idletasks()
+        self.geometry("900x400")
 
         self.update_ui()
 
